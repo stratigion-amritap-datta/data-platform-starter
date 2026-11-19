@@ -1,0 +1,102 @@
+version: 2
+
+seeds:
+  - name: raw_customers
+    description: Customer extract. One row per customer, as landed from the store.
+    columns:
+      - name: customer_id
+        description: Stable customer identifier from the store.
+        data_tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: Customer given name as landed.
+        data_tests:
+          - not_null
+      - name: last_name
+        description: Customer family name as landed.
+        data_tests:
+          - not_null
+      - name: email
+        description: Customer email. Unique in this extract.
+        data_tests:
+          - unique
+          - not_null
+      - name: country
+        description: Country on the customer record.
+        data_tests:
+          - not_null
+      - name: signup_date
+        description: Date the customer created an account.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Last time the source row changed.
+        data_tests:
+          - not_null
+
+  - name: raw_orders
+    description: Order extract. One row per order, including later status and refund updates.
+    columns:
+      - name: order_id
+        description: Stable order identifier from the store.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer who placed the order.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('raw_customers')
+                field: customer_id
+      - name: ordered_at
+        description: Timestamp the order was placed.
+        data_tests:
+          - not_null
+      - name: status
+        description: Latest fulfillment status in the extract.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['placed', 'paid', 'shipped', 'delivered', 'returned', 'cancelled']
+      - name: payment_method
+        description: How the customer paid.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['card', 'paypal', 'gift_card', 'bank_transfer']
+      - name: currency
+        description: ISO currency of the order amounts. This sample is USD.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD']
+      - name: subtotal_amount
+        description: Merchandise amount before discount, tax, and shipping.
+        data_tests:
+          - not_null
+      - name: discount_amount
+        description: Discount taken off the subtotal.
+        data_tests:
+          - not_null
+      - name: tax_amount
+        description: Tax charged on the order.
+        data_tests:
+          - not_null
+      - name: shipping_amount
+        description: Shipping charged on the order.
+        data_tests:
+          - not_null
+      - name: refund_amount
+        description: Amount refunded so far, in the order currency. Zero when nothing has been refunded.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Last time the order row changed in the source. Drives the fact-table lookback.
+        data_tests:
+          - not_null

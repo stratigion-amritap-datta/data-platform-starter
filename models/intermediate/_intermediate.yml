@@ -1,0 +1,110 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    description: >
+      Orders with customer context and commercial measures. One row per order.
+      This is the full population. The incremental fact filters it; the customer
+      dimension aggregates it. Point lifetime metrics here, not at fct_orders,
+      or the lookback window will undercount history.
+    columns:
+      - name: order_id
+        description: Order grain.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer who placed the order.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: customer_country
+        description: Country on the current customer record. This extract has no address history.
+        data_tests:
+          - not_null
+      - name: customer_signup_date
+        description: Date the customer created an account.
+        data_tests:
+          - not_null
+      - name: ordered_at
+        description: Timestamp the order was placed.
+        data_tests:
+          - not_null
+      - name: order_date
+        description: Calendar date of ordered_at.
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Latest fulfillment status from the extract.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['placed', 'paid', 'shipped', 'delivered', 'returned', 'cancelled']
+      - name: payment_method
+        description: How the customer paid.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['card', 'paypal', 'gift_card', 'bank_transfer']
+      - name: currency_code
+        description: ISO currency of the order amounts. This sample is USD only.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD']
+      - name: subtotal_amount
+        description: Merchandise amount before discount, tax, and shipping.
+        data_tests:
+          - not_null
+      - name: discount_amount
+        description: Discount taken off the subtotal.
+        data_tests:
+          - not_null
+      - name: tax_amount
+        description: Tax charged on the order.
+        data_tests:
+          - not_null
+      - name: shipping_amount
+        description: Shipping charged on the order.
+        data_tests:
+          - not_null
+      - name: order_total_amount
+        description: Subtotal minus discount, plus tax and shipping.
+        data_tests:
+          - not_null
+      - name: refund_amount
+        description: Amount refunded so far. Zero when nothing has been refunded.
+        data_tests:
+          - not_null
+      - name: recognized_revenue_amount
+        description: >
+          Zero when the order is cancelled. Otherwise order total minus refund.
+          A full return is a refund equal to the order total.
+        data_tests:
+          - not_null
+      - name: is_cancelled
+        description: True when order_status is cancelled.
+        data_tests:
+          - not_null
+      - name: is_returned
+        description: True when order_status is returned. A return may be full or partial.
+        data_tests:
+          - not_null
+      - name: is_revenue_eligible
+        description: True once the order is paid, shipped, delivered, or returned.
+        data_tests:
+          - not_null
+      - name: days_since_signup
+        description: Whole days from customer signup to the order date.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Source update timestamp passed through for the fact lookback.
+        data_tests:
+          - not_null

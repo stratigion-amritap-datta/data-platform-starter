@@ -1,0 +1,9 @@
+version: 2
+
+data_tests:
+  - name: assert_order_amounts_are_consistent
+    description: >
+      Fails when a refund exceeds the order total, a discount exceeds subtotal,
+      recognized revenue is negative, signup is after the order, or recognized
+      revenue does not follow the rule: zero when cancelled, otherwise order
+      total minus refund.

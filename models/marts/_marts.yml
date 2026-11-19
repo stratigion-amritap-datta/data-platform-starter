@@ -1,0 +1,178 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order. Incremental merge on order_id with a two-day lookback
+      on updated_at. Amounts are in the order currency. Cancelled orders stay
+      in the table with recognized revenue of zero.
+    columns:
+      - name: order_id
+        description: Order grain and merge key.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer who placed the order.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: customer_country
+        description: Country on the current customer record.
+        data_tests:
+          - not_null
+      - name: customer_signup_date
+        description: Date the customer created an account.
+        data_tests:
+          - not_null
+      - name: ordered_at
+        description: Timestamp the order was placed.
+        data_tests:
+          - not_null
+      - name: order_date
+        description: Calendar date of ordered_at.
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Latest status merged from the source.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['placed', 'paid', 'shipped', 'delivered', 'returned', 'cancelled']
+      - name: payment_method
+        description: How the customer paid.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['card', 'paypal', 'gift_card', 'bank_transfer']
+      - name: currency_code
+        description: ISO currency of the amounts on this row. This sample is USD only.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD']
+      - name: subtotal_amount
+        description: Merchandise amount before discount, tax, and shipping.
+        data_tests:
+          - not_null
+      - name: discount_amount
+        description: Discount taken off the subtotal.
+        data_tests:
+          - not_null
+      - name: tax_amount
+        description: Tax charged on the order.
+        data_tests:
+          - not_null
+      - name: shipping_amount
+        description: Shipping charged on the order.
+        data_tests:
+          - not_null
+      - name: order_total_amount
+        description: Subtotal minus discount, plus tax and shipping.
+        data_tests:
+          - not_null
+      - name: refund_amount
+        description: Amount refunded so far. Zero when nothing has been refunded.
+        data_tests:
+          - not_null
+      - name: recognized_revenue_amount
+        description: Zero when cancelled; otherwise order total minus refund.
+        data_tests:
+          - not_null
+      - name: is_cancelled
+        description: True when order_status is cancelled. The row is kept.
+        data_tests:
+          - not_null
+      - name: is_returned
+        description: True when order_status is returned. Check refund_amount for full versus partial.
+        data_tests:
+          - not_null
+      - name: is_revenue_eligible
+        description: True for paid, shipped, delivered, and returned orders.
+        data_tests:
+          - not_null
+      - name: days_since_signup
+        description: Whole days from customer signup to the order date.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Source update timestamp. The lookback watermark reads this column.
+        data_tests:
+          - not_null
+      - name: dbt_updated_at
+        description: >
+          When dbt last merged this row. Rows outside the lookback window keep
+          the timestamp from the run that last touched them.
+        data_tests:
+          - not_null
+
+  - name: dim_customers
+    description: >
+      One row per customer, including accounts that have never ordered.
+      Lifetime measures are aggregated from int_orders_enriched so the fact
+      table lookback cannot drop older orders out of the totals.
+    columns:
+      - name: customer_id
+        description: Customer grain.
+        data_tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: Customer given name.
+        data_tests:
+          - not_null
+      - name: last_name
+        description: Customer family name.
+        data_tests:
+          - not_null
+      - name: full_name
+        description: Given name and family name separated by a space.
+        data_tests:
+          - not_null
+      - name: email
+        description: Lowercased email address. Unique in this extract.
+        data_tests:
+          - unique
+          - not_null
+      - name: country
+        description: Country on the current customer record.
+        data_tests:
+          - not_null
+      - name: signup_date
+        description: Date the customer created an account.
+        data_tests:
+          - not_null
+      - name: first_order_date
+        description: Date of the earliest order. Null until the customer places one.
+      - name: last_order_date
+        description: Date of the latest order. Null until the customer places one.
+      - name: lifetime_order_count
+        description: Count of all orders, including cancelled.
+        data_tests:
+          - not_null
+      - name: lifetime_non_cancelled_order_count
+        description: Count of orders whose status is not cancelled.
+        data_tests:
+          - not_null
+      - name: lifetime_order_total_amount
+        description: Sum of order totals, including cancelled orders.
+        data_tests:
+          - not_null
+      - name: lifetime_recognized_revenue_amount
+        description: Sum of recognized revenue. Cancelled orders contribute zero.
+        data_tests:
+          - not_null
+      - name: has_ordered
+        description: True when the customer has at least one order.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Last update of the customer source row.
+        data_tests:
+          - not_null

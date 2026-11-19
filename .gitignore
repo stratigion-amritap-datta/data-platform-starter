@@ -1,0 +1,30 @@
+# dbt build artifacts
+target/
+dbt_packages/
+dbt_internal_packages/
+logs/
+.user.yml
+
+# Local connection and warehouse. Start from profiles.yml.example.
+profiles.yml
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Environment and OS
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/

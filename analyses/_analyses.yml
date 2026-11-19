@@ -1,0 +1,7 @@
+version: 2
+
+analyses:
+  - name: revenue_by_country
+    description: >
+      Recognized revenue and order counts by current customer country and
+      currency. Compiled with dbt compile. Not built by dbt run.

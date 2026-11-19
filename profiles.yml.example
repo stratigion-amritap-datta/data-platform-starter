@@ -1,0 +1,25 @@
+# Copy to profiles.yml (gitignored). The profile name matches dbt_project.yml.
+#
+# Point dbt at this directory so it reads the copy here, not ~/.dbt/profiles.yml:
+#   PowerShell: $env:DBT_PROFILES_DIR = (Get-Location).Path
+#   bash:       export DBT_PROFILES_DIR="$PWD"
+#
+# DuckDB resolves `path` relative to this file, not the shell's working directory.
+
+data_platform_starter:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Created on the first run. Gitignored.
+      path: dev.duckdb
+      # Fallback schema. Models set raw, staging, intermediate, and marts.
+      schema: main
+      # One writer on a local DuckDB file. Raising threads can trip file locks.
+      threads: 1
+    ci:
+      type: duckdb
+      # Nothing is written to disk. Use this target for dbt build in CI.
+      path: ":memory:"
+      schema: main
+      threads: 1
